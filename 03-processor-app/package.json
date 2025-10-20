@@ -1,0 +1,23 @@
+{
+  "name": "03-processor-app",
+  "version": "1.0.0",
+  "description": "Persistir cita",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "esbuild src/infrastructure/handler.ts --bundle --outfile=dist/index.js --platform=node --target=node22 --external:aws-sdk"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^24.8.1",
+    "aws-sdk": "^2.1692.0",
+    "esbuild": "^0.25.11",
+    "pino": "^10.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.156"
+  }
+}

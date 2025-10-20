@@ -1,8 +1,52 @@
-*.js
-!jest.config.js
-*.d.ts
-node_modules
 
-# CDK asset staging directory
-.cdk.staging
-cdk.out
+# -----------------------------------------------------------------
+# GLOBAL: IGNORAR DIRECTORIOS Y ARCHIVOS GENERADOS
+# -----------------------------------------------------------------
+# Node.js
+/node_modules
+/npm-debug.log*
+/yarn-error.log
+/package-lock.json
+
+# TypeScript y Compilación
+/dist/
+/out/
+/lib/         # Comúnmente usado por TSC o Babel
+
+# Archivos temporales del OS
+.DS_Store
+Thumbs.db
+
+# -----------------------------------------------------------------
+# LAMBDAS (02-appointment & 03-processor-app)
+# -----------------------------------------------------------------
+# Los directorios 'dist' deben estar dentro de cada proyecto lambda:
+02-appointment/dist/
+03-processor-app/dist/
+
+# Archivos de pruebas
+/.nyc_output
+/coverage
+
+# Entornos y logs de desarrollo local
+.env
+.local.*
+*.log
+
+# -----------------------------------------------------------------
+# INFRAESTRUCTURA (infra) - AWS CDK
+# -----------------------------------------------------------------
+# Logs de la CLI de CDK
+cdk.out/
+
+# Directorios de compilación y cache de CDK (ts-node)
+.cdk/
+.awscdk/
+.tmp/
+
+# Archivos de la cache de assets de Docker
+*.zip
+*.dockerignore
+
+# Archivos de AWS CLI (Credenciales)
+.aws/

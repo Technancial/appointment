@@ -1,0 +1,24 @@
+{
+  "name": "appointment",
+  "version": "1.0.0",
+  "description": "gestion de citas",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "esbuild src/index.ts --bundle --outfile=dist/main.js --platform=node --target=node22 --external:aws-sdk"
+  },
+  "author": "Raul Talledo",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.8.1",
+    "esbuild": "^0.25.11",
+    "pino-lambda": "^4.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@types/aws-lambda": "^8.10.156",
+    "aws-sdk": "^2.1692.0",
+    "pino": "^10.1.0"
+  }
+}
