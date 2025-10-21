@@ -10,14 +10,14 @@
   "author": "Raul Talledo",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^24.8.1",
+    "@types/aws-lambda": "^8.10.156",
+    "@types/node": "^24.9.1",
     "esbuild": "^0.25.11",
     "pino-lambda": "^4.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@types/aws-lambda": "^8.10.156",
     "aws-sdk": "^2.1692.0",
     "pino": "^10.1.0"
   }
