@@ -4,12 +4,13 @@ import { EventBridgePublisher } from './repository/EventBridgePublisher';
 import { SaveMessageUseCase } from '@application/SaveMessage';
 import { ProcessedMessage } from '@domain/entities';
 import { PinoLoggerAdapter } from './utils/Logger';
+import { MysqlRepository } from './repository/MysqlRepository';
 
 export const logger = new PinoLoggerAdapter();
 
-const s3Repository = new S3Repository(logger);
+const dbRepository = new MysqlRepository(logger);
 const eventPublisher = new EventBridgePublisher(logger);
-const saveMessageUseCase = new SaveMessageUseCase(s3Repository, eventPublisher, logger);
+const saveMessageUseCase = new SaveMessageUseCase(dbRepository, eventPublisher, logger);
 
 export const handler = async (event: SQSEvent, context: Context): Promise<void> => {
 

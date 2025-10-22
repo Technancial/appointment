@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "strict": true,
     "skipLibCheck": true,
-    "types": ["node", "aws-lambda"],
+    "types": ["node", "aws-lambda", "jest"],
     "moduleResolution": "node",
     "baseUrl": "./src",
     "paths": {

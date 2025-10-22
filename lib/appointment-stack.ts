@@ -216,6 +216,9 @@ export class AppointmentStack extends cdk.Stack {
                 BUCKET_NAME: processedDataBucket.bucketName,
                 LOG_LEVEL: 'info',
                 EVENT_BUS_NAME: 'default', // Usaremos el bus por defecto de AWS
+                DB_SECRET_ARN: 'secretBD',
+                DB_HOST: 'hostBD',
+                DB_NAME: 'cita'
             },
         };
 

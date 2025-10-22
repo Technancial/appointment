@@ -1,0 +1,20 @@
+{
+  // Herencia de la configuración base
+  "extends": "./tsconfig.json", 
+  
+  "compilerOptions": {
+    // Anula rootDir si es necesario, pero si la base es "./", solo necesitamos incluir
+    "rootDir": "./" 
+  },
+  
+  // 💡 Incluye tanto el código fuente como las pruebas
+  "include": [
+    "src/**/*",
+    "tests/**/*" 
+  ],
+  
+  // Asegúrate de que node_modules sigue excluido
+  "exclude": [
+    "node_modules" 
+  ]
+}

@@ -18,6 +18,7 @@ export class Appointment {
         this.date = date;
         this.insuredId = insuredId;
         this.countryId = countryId;
+        this.assignEstado('pending');
     }
     assignEstado(estado: string): void {
         if (!['pending', 'confirmed', 'cancelled'].includes(estado)) {

@@ -1,9 +1,9 @@
-import { IEventPublisher, IS3Repository, ProcessedMessage } from "@domain/entities";
+import { IEventPublisher, IDBRepository, ProcessedMessage } from "@domain/entities";
 import { ILogger } from "@domain/Logger";
 
 export class SaveMessageUseCase {
     constructor(
-        private s3Repository: IS3Repository,
+        private dbRepository: IDBRepository,
         private eventPublisher: IEventPublisher,
         private logger: ILogger
     ) { }
@@ -14,10 +14,9 @@ export class SaveMessageUseCase {
         // Por ahora, solo guardaremos el mensaje tal cual.
 
         // 2. Persistencia (Llama al Puerto S3)
-        const s3Key = await this.s3Repository.save(message);
-        this.logger.info(`Dato guardado S3: ${s3Key}`);
+        await this.dbRepository.save(message);
 
         // 3. Notificación (Llama al Puerto EventBridge)
-        await this.eventPublisher.publishSuccess(s3Key, message);
+        await this.eventPublisher.publishSuccess(message);
     }
 }

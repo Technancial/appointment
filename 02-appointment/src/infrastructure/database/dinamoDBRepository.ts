@@ -74,7 +74,7 @@ export class DynamoDBAppointmentRepository implements IAppointmentRepository {
         return appointment;
     }
 
-    async save(appointment: Appointment): Promise<void> {
+    async save(appointment: Appointment): Promise<Appointment> {
 
         const item: AppointmentItem = {
             PK: `INSURED#${appointment.insuredId}`, // Ejemplo de Clave de Partición
@@ -110,6 +110,8 @@ export class DynamoDBAppointmentRepository implements IAppointmentRepository {
                 scheduleId: appointment.scheduleId,
                 status: item.status
             });
+
+            return appointment;
 
         } catch (error) {
             this.logger.error('Failed to save appointment data to DynamoDB.', error as Error, {

@@ -28,6 +28,7 @@ Thumbs.db
 # Archivos de pruebas
 /.nyc_output
 /coverage
+*/coverage
 
 # Entornos y logs de desarrollo local
 .env

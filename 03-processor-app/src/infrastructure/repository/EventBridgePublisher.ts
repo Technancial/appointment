@@ -10,11 +10,10 @@ export class EventBridgePublisher implements IEventPublisher {
         this.eventBusName = process.env.EVENT_BUS_NAME || 'default';
     }
 
-    async publishSuccess(s3Key: string, message: ProcessedMessage): Promise<void> {
-        this.logger.info(`publish Event s3key: ${s3Key} queue: ${message.data.queueName}`);
+    async publishSuccess(message: ProcessedMessage): Promise<void> {
+        this.logger.info(`publish Event queue: ${message.data.queueName}`);
 
         const detail = JSON.stringify({
-            s3Key: s3Key,
             //queueProcessed: message.data.queueName,
             insuredId: message.data.insuredId,
             scheduleId: message.data.scheduleId,

@@ -2,9 +2,11 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
-    "rootDir": "./src",
+    "rootDir": "./",
     "outDir": "./dist",
     "esModuleInterop": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "strict": true,
     "skipLibCheck": true,
     "types": ["node", "aws-lambda"],
@@ -15,5 +17,12 @@
       "@application/*": ["application/*"],
       "@infrastructure/*": ["infrastructure/*"]
     }
-  }
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "tests/**/*" // Excluimos tests de la compilación de producción
+  ]
 }

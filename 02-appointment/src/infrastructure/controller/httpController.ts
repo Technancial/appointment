@@ -13,7 +13,7 @@ export const httpController = (
     return async (
         event: payloadGenericRequestDTO //ScheduleAppointmentRequestDTO
     ): Promise<ScheduleAppointmentResponseDTO | Appointment[] | undefined | null> => {
-        logger.info(`Ejecución opereación: ${event.action} con data: ${event.data}`);
+        logger.debug(`Ejecución opereación: ${event.action} con data: ${event.data}`);
 
         var result;
         try {

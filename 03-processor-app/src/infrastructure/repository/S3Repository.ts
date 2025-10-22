@@ -1,8 +1,8 @@
-import { IS3Repository, ProcessedMessage } from '@domain/entities';
+import { IDBRepository, ProcessedMessage } from '@domain/entities';
 import { ILogger } from '@domain/Logger';
 import { S3 } from 'aws-sdk';
 
-export class S3Repository implements IS3Repository {
+export class S3Repository implements IDBRepository {
     private s3 = new S3();
     private bucketName: string;
 
