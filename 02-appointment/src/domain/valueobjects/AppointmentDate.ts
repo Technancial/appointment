@@ -10,6 +10,10 @@ export class AppointmentDate {
     }
 
     private validate(value: string, dateValidator: IDateValidator): void {
+        if (typeof value !== 'string') {
+            throw new InvalidDateError('La fecha de la cita tiene que ser string');
+        }
+
         if (!value || value.trim() === '') {
             throw new InvalidDateError('La fecha de la cita no puede estar vacía');
         }

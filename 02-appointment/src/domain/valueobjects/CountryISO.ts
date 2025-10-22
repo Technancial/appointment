@@ -17,6 +17,9 @@ export class CountryISO {
     }
 
     private validate(value: string): void {
+        if (typeof value !== 'string') {
+            throw new InvalidCountryError('Código de país tiene que ser string');
+        }
         if (!value || value.trim() === '') {
             throw new InvalidCountryError('Código de país no puede estar vacío');
         }

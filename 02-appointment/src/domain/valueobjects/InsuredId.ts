@@ -10,6 +10,9 @@ export class InsuredId {
     }
 
     private validate(value: string): void {
+        if (typeof value !== 'string') {
+            throw new InvalidInsuredIdError('InsuredId tiene que ser string');
+        }
         if (!value || value.trim() === '') {
             throw new InvalidInsuredIdError('InsuredId no puede estar vacío');
         }
