@@ -8,7 +8,7 @@ El proyecto se compone de tres componentes principales:
 
 **infra**: Define todos los recursos de AWS usando AWS CDK.
 
-**02-appointment**: Microservicio principal (Adaptador HTTP) que recibe y despacha peticiones POST (registro) y GET (búsqueda).
+**02-appointment**: Microservicio principal (Adaptador HTTP) que recibe y despacha peticiones POST (registro) y GET (búsqueda); y también cuenta ocn un Adaptador SQS para actualizar el estado de la petición a confirmado.
 
 **03-processor-app**: Microservicio asíncrono (Adaptador SQS) que procesa los eventos de agendamiento y los persiste en S3.
 ![Arquitectura](/image/appointment.jpg)
@@ -16,11 +16,11 @@ El proyecto se compone de tres componentes principales:
 |Recursos|Tipo|Propósito|
 |--------|----|---------|
 |API Gateway|REST API|Punto de entrada público (Non-Proxy) para POST /appointments y GET /appointments/{id}.|
-|Lambda 02-appointment|Docker Container|Lógica sincrónica de registro/búsqueda. Publica eventos a SNS.|
+|Lambda 02-appointment|Docker Container|Lógica sincrónica de registro/búsqueda. Publica eventos a SNS. Además recibe las peticiones de SQS para confirmar la cita|
 |SNS AppointmentScheduledTopic|Tópico|Canal de eventos para el registro de citas.|
 |SQS *ProcessingQueue| Colas de Trabajo | Dos colas suscritas a SNS con filtros por Country (PE, CL).|
-|Lambda 03-processor-ap| Docker Container (x2) | Consume las colas SQS (PE y CL). Persiste el contenido en S3.|
-|EventBridge | Bus de Eventos | Recibe notificaciones de 03-processor-app sobre el éxito del guardado en S3.|
+|Lambda 03-processor-ap| Docker Container (x2) | Consume las colas SQS (PE y CL). Persiste el contenido en MySql RDS.|
+|EventBridge | Bus de Eventos | Recibe notificaciones de 03-processor-app sobre el éxito del guardado en MySql RDS.|
 |SQS NotificationQueue| Cola de Notificación | Recibe eventos de EventBridge para procesamiento posterior.|
 
 # Despliegue y Uso
@@ -45,14 +45,14 @@ Todos los comandos se ejecutan desde el directorio infra/.
 | cdk deploy | Construye los Docker Assets, los sube a ECR y crea todos los recursos de AWS. |
 
 3. **Documentación de Uso (API Gateway)**
-   La API Gateway está configurada con Integración Non-Proxy, lo que significa que el cuerpo de la petición HTTP se envuelve en un payload uniforme para la Lambda: { "action": "...", "data": "..." }.
+   La API Gateway está configurada con Integración Non-Proxy, lo que significa que el cuerpo de la petición HTTP se envuelve en un payload uniforme para la Lambda: { "action": "...", "data": "..." }, estas transformaciones son sólo para las peticiones que llegan através del API Gateway.
 
-   _URL_ Base: https://sszycq4t16.execute-api.us-east-1.amazonaws.com/v1
+   _**URL Base**_: https://sszycq4t16.execute-api.us-east-1.amazonaws.com/v1
 
-   _POST_: Agendar una Cita (action: "register")
+   _**POST**_: Agendar una Cita (action: "register")
    Inicia el proceso asíncrono. La Lambda 02-appointment envuelve tu payload en ```{"action": "register", "data": ...}```.
 
-   _URL_: POST URL_Base/appointments
+   _**URL POST**_: URL Base/appointments
 
    **Validaciones:**
    - `insuredId`: String de exactamente 5 caracteres
@@ -90,10 +90,10 @@ Todos los comandos se ejecutan desde el directorio infra/.
     }
     ```
 
-    _GET_: Consultar Citas por Asegurado (action: "find")
+    _**GET**_: Consultar Citas por Asegurado (action: "find")
     La Lambda 02-appointment envuelve tu ID de URL en ```{"action": "find", "data": "ID_DEL_ASEGURADO"}```.
 
-    _URL_: GET URL_Base/appointments/{insuredId}
+    _**URL GET**_: URL Base/appointments/{insuredId}
 
     **Validaciones:**
     - `insuredId`: String de exactamente 5 caracteres (en el path)
@@ -136,7 +136,7 @@ info:
   description: Microservicio para gestión de citas médicas utilizando arquitectura serverless en AWS
   version: 1.0.0
   contact:
-    name: Equipo de Desarrollo
+    name: Raul Talledo
 servers:
   - url: https://sszycq4t16.execute-api.us-east-1.amazonaws.com/v1
     description: Servidor de Producción
@@ -405,7 +405,3 @@ Para visualizar y probar la API utilizando la especificación Swagger:
 
 3. **Postman**: Importa el archivo YAML directamente en Postman para generar una colección de pruebas.
 
-4. **Generación de Clientes**: Utiliza [Swagger Codegen](https://swagger.io/tools/swagger-codegen/) para generar SDKs en diferentes lenguajes:
-   ```bash
-   swagger-codegen generate -i swagger.yaml -l typescript-fetch -o ./client
-   ```
