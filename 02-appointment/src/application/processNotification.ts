@@ -14,7 +14,7 @@ export class ProcessNotification {
         return this.appointmentRepository.updateStatus(
             insuredId.getValue(),
             scheduleId.toString(),
-            Status.CONFIRMED
+            Status.COMPLETED
         );
     }
 }
