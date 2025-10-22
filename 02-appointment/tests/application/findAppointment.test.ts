@@ -1,13 +1,23 @@
 import { FindAppointment } from '@application/findAppointment';
 import { IAppointmentRepository } from '@domain/repository/IAppointmentRepository';
 import { ILogger } from '@domain/dto/Logger';
-import { Appointment } from '@domain/entities/appointment';
 import { PinoLoggerAdapter } from '@infrastructure/utils/Logger';
+import { InvalidInsuredIdError } from '@domain/errors/DomainErrors';
+import { InsuredId } from '@domain/valueobjects/InsuredId';
+import { ScheduleId } from '@domain/valueobjects/ScheduleId';
+import { CountryISO } from '@domain/valueobjects/CountryISO';
+import { CenterId } from '@domain/valueobjects/CenterId';
+import { SpecialtyId } from '@domain/valueobjects/SpecialtyId';
+import { MedicId } from '@domain/valueobjects/MedicId';
+import { AppointmentDate } from '@domain/valueobjects/AppointmentDate';
+import { Appointment } from '@domain/entities/appointment';
+import { NativeDateValidator } from '@infrastructure/utils/nativeDateValidator';
 
 describe('FindAppointment', () => {
     let findAppointment: FindAppointment;
     let mockRepository: jest.Mocked<IAppointmentRepository>;
     let logger: ILogger;
+    let dateValidator: NativeDateValidator;
 
     beforeEach(() => {
         mockRepository = {
@@ -18,6 +28,7 @@ describe('FindAppointment', () => {
 
         logger = new PinoLoggerAdapter();
         jest.spyOn(logger, 'info').mockImplementation();
+        dateValidator = new NativeDateValidator();
 
         findAppointment = new FindAppointment(mockRepository, logger);
     });
@@ -27,22 +38,22 @@ describe('FindAppointment', () => {
             const insuredId = '12345';
             const mockAppointments = [
                 new Appointment(
-                    98701,
-                    101,
-                    105,
-                    201,
-                    '2025-12-25T10:00:00Z',
-                    '12345',
-                    'PE'
+                    new ScheduleId(98701),
+                    new CenterId(101),
+                    new SpecialtyId(105),
+                    new MedicId(201),
+                    new AppointmentDate('2025-12-25T10:00:00Z', dateValidator),
+                    new InsuredId('12345'),
+                    new CountryISO('PE')
                 ),
                 new Appointment(
-                    98702,
-                    102,
-                    106,
-                    202,
-                    '2025-12-26T14:00:00Z',
-                    '12345',
-                    'CL'
+                    new ScheduleId(98702),
+                    new CenterId(102),
+                    new SpecialtyId(106),
+                    new MedicId(202),
+                    new AppointmentDate('2025-12-26T14:00:00Z', dateValidator),
+                    new InsuredId('12345'),
+                    new CountryISO('CL')
                 )
             ];
 
@@ -75,7 +86,7 @@ describe('FindAppointment', () => {
         it('should throw error when insuredId is empty', async () => {
             const insuredId = '';
 
-            await expect(findAppointment.execute(insuredId)).rejects.toThrow('Falta InsuredId');
+            await expect(findAppointment.execute(insuredId)).rejects.toThrow(InvalidInsuredIdError);
 
             expect(mockRepository.findById).not.toHaveBeenCalled();
         });
@@ -83,7 +94,15 @@ describe('FindAppointment', () => {
         it('should throw error when insuredId is whitespace only', async () => {
             const insuredId = '   ';
 
-            await expect(findAppointment.execute(insuredId.trim())).rejects.toThrow('Falta InsuredId');
+            await expect(findAppointment.execute(insuredId.trim())).rejects.toThrow(InvalidInsuredIdError);
+
+            expect(mockRepository.findById).not.toHaveBeenCalled();
+        });
+
+        it('should throw error when insuredId has invalid length', async () => {
+            const insuredId = '1234'; // Less than 5 characters
+
+            await expect(findAppointment.execute(insuredId)).rejects.toThrow(InvalidInsuredIdError);
 
             expect(mockRepository.findById).not.toHaveBeenCalled();
         });
@@ -104,13 +123,13 @@ describe('FindAppointment', () => {
             const insuredId = '12345';
             const mockAppointments = [
                 new Appointment(
-                    98701,
-                    101,
-                    105,
-                    201,
-                    '2025-12-25T10:00:00Z',
-                    '12345',
-                    'PE'
+                    new ScheduleId(98701),
+                    new CenterId(101),
+                    new SpecialtyId(105),
+                    new MedicId(201),
+                    new AppointmentDate('2025-12-25T10:00:00Z', dateValidator),
+                    new InsuredId('12345'),
+                    new CountryISO('PE')
                 )
             ];
 

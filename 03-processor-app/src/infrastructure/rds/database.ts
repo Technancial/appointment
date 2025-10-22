@@ -23,7 +23,6 @@ export async function getDataSource(): Promise<DataSource> {
     let credentials: any;
 
     try {
-        // Obtener el valor del secreto
         const secretData = await sm.getSecretValue({ SecretId: secretArn }).promise();
 
         if (secretData.SecretString) {
@@ -36,7 +35,6 @@ export async function getDataSource(): Promise<DataSource> {
         throw new Error("Failed to load database credentials.");
     }
 
-    // Configuración del DataSource
     dataSource = new DataSource({
         type: 'mysql',
         host: dbHost,
@@ -49,7 +47,7 @@ export async function getDataSource(): Promise<DataSource> {
         database: dbName,
         synchronize: false, // Debe ser 'false' si usas migraciones o tienes la tabla creada por scripts
         logging: ['error'],
-        entities: [AppointmentDetailsDB], // 💡 Usar la nueva entidad
+        entities: [AppointmentDetailsDB], // Usar la nueva entidad
 
         extra: {
             connectionLimit: 2,

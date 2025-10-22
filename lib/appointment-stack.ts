@@ -271,7 +271,7 @@ export class AppointmentStack extends cdk.Stack {
         const eventBridgeRule = new events.Rule(this, 'S3SaveSuccessRule', {
             eventPattern: {
                 source: ['com.appointment.processor'], // Fuente que la Lambda publicará
-                detailType: ['S3_SAVE_SUCCESS'], // Tipo de evento para el éxito
+                detailType: ['DB_SAVE_SUCCESS'], // Tipo de evento para el éxito
             },
             description: 'Routes S3 save success events to the notification queue.',
         });

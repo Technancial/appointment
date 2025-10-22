@@ -11,6 +11,38 @@ const mockLogger = {
     debug: jest.fn()
 };
 
+const mockConfigService = {
+    eventBusName: 'test-event-bus',
+    sqsQueueName: 'test-queue-PE',
+    bucketName: 'test-bucket',
+    dbHost: 'localhost',
+    dbPort: 3306,
+    dbUser: 'test-user',
+    dbPassword: 'test-password',
+    dbName: 'test-db',
+    getDatabaseConfig: jest.fn().mockReturnValue({
+        host: 'localhost',
+        port: 3306,
+        username: 'test-user',
+        password: 'test-password',
+        database: 'test-db'
+    })
+};
+
+const mockMapToProcessedMessage = jest.fn();
+
+jest.mock('@infrastructure/config/ConfigService', () => ({
+    ConfigService: {
+        getInstance: jest.fn(() => mockConfigService)
+    }
+}));
+
+jest.mock('@infrastructure/mappers/SQSEventMapper', () => ({
+    SQSEventMapper: jest.fn().mockImplementation(() => ({
+        mapToProcessedMessage: mockMapToProcessedMessage
+    }))
+}));
+
 jest.mock('@infrastructure/repository/MysqlRepository', () => ({
     MysqlRepository: jest.fn().mockImplementation(() => ({
         save: mockSave
@@ -34,7 +66,7 @@ jest.mock('@application/SaveMessage', () => ({
 }));
 
 // Import handler after mocks are set up
-import { handler } from '@infrastructure/handler';
+import { handler } from '../../src/infrastructure/handler';
 
 describe('SQS Handler - Event Processing', () => {
     let mockContext: Context;
@@ -42,7 +74,13 @@ describe('SQS Handler - Event Processing', () => {
     beforeEach(() => {
         // Setup environment variables
         process.env.SQS_QUEUE_NAME = 'test-queue-PE';
-        
+        process.env.EVENT_BUS_NAME = 'test-event-bus';
+        process.env.DB_HOST = 'localhost';
+        process.env.DB_PORT = '3306';
+        process.env.DB_USER = 'test-user';
+        process.env.DB_PASSWORD = 'test-password';
+        process.env.DB_NAME = 'test-db';
+
         // Reset all mocks
         jest.clearAllMocks();
 
@@ -61,10 +99,24 @@ describe('SQS Handler - Event Processing', () => {
             fail: jest.fn(),
             succeed: jest.fn()
         };
+
+        // Setup default mock behavior for SQSEventMapper
+        mockMapToProcessedMessage.mockImplementation((record) => ({
+            id: record.messageId,
+            data: JSON.parse(record.body),
+            queueSource: 'test-queue-PE',
+            timestamp: new Date(parseInt(record.attributes.SentTimestamp, 10)).toISOString()
+        }));
     });
 
     afterEach(() => {
         delete process.env.SQS_QUEUE_NAME;
+        delete process.env.EVENT_BUS_NAME;
+        delete process.env.DB_HOST;
+        delete process.env.DB_PORT;
+        delete process.env.DB_USER;
+        delete process.env.DB_PASSWORD;
+        delete process.env.DB_NAME;
     });
 
     describe('Successful message processing', () => {
@@ -97,6 +149,7 @@ describe('SQS Handler - Event Processing', () => {
 
             await handler(sqsEvent, mockContext);
 
+            expect(mockMapToProcessedMessage).toHaveBeenCalledTimes(1);
             expect(mockExecute).toHaveBeenCalledTimes(1);
             expect(mockExecute).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -111,6 +164,7 @@ describe('SQS Handler - Event Processing', () => {
                     timestamp: expect.any(String)
                 })
             );
+            expect(mockLogger.info).toHaveBeenCalled();
         });
 
         it('should process multiple SQS messages successfully', async () => {
@@ -161,8 +215,9 @@ describe('SQS Handler - Event Processing', () => {
 
             await handler(sqsEvent, mockContext);
 
+            expect(mockMapToProcessedMessage).toHaveBeenCalledTimes(2);
             expect(mockExecute).toHaveBeenCalledTimes(2);
-            expect(mockExecute).toHaveBeenNthCalledWith(1, 
+            expect(mockExecute).toHaveBeenNthCalledWith(1,
                 expect.objectContaining({
                     id: 'test-message-1',
                     data: { insuredId: '12345', scheduleId: '98701' }
@@ -176,9 +231,7 @@ describe('SQS Handler - Event Processing', () => {
             );
         });
 
-        it('should use default queue name when SQS_QUEUE_NAME is not set', async () => {
-            delete process.env.SQS_QUEUE_NAME;
-
+        it('should use queue name from ConfigService', async () => {
             const sqsEvent: SQSEvent = {
                 Records: [{
                     messageId: 'test-message-123',
@@ -204,7 +257,7 @@ describe('SQS Handler - Event Processing', () => {
 
             expect(mockExecute).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    queueSource: 'UnknownQueue'
+                    queueSource: 'test-queue-PE'
                 })
             );
         });
@@ -236,9 +289,10 @@ describe('SQS Handler - Event Processing', () => {
 
             await expect(handler(sqsEvent, mockContext)).rejects.toThrow('Database save failed');
             expect(mockExecute).toHaveBeenCalledTimes(1);
+            expect(mockLogger.error).toHaveBeenCalled();
         });
 
-        it('should handle invalid JSON in message body', async () => {
+        it('should handle mapper errors', async () => {
             const sqsEvent: SQSEvent = {
                 Records: [{
                     messageId: 'test-message-123',
@@ -258,11 +312,16 @@ describe('SQS Handler - Event Processing', () => {
                 }]
             };
 
+            mockMapToProcessedMessage.mockImplementation(() => {
+                throw new Error('Invalid SQS message format');
+            });
+
             await expect(handler(sqsEvent, mockContext)).rejects.toThrow();
             expect(mockExecute).not.toHaveBeenCalled();
+            expect(mockLogger.error).toHaveBeenCalled();
         });
 
-        it('should continue processing other messages when one fails', async () => {
+        it('should stop processing when one message fails', async () => {
             const sqsEvent: SQSEvent = {
                 Records: [
                     {

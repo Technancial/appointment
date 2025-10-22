@@ -1,10 +1,10 @@
-import { RegisterAppointment, ScheduleAppointmentInput, InvalidCountryError, InvalidDateError } from '@application/registerAppointment';
+import { RegisterAppointment, ScheduleAppointmentInput } from '@application/registerAppointment';
 import { IAppointmentRepository } from '@domain/repository/IAppointmentRepository';
 import { INotificationService } from '@domain/repository/INotificationService';
 import { IDateValidator } from '@domain/dto/IDateValidator';
 import { ILogger } from '@domain/dto/Logger';
 import { PinoLoggerAdapter } from '@infrastructure/utils/Logger';
-import { NativeDateValidator } from '@infrastructure/utils/nativeDateValidator';
+import { InvalidInsuredIdError, InvalidScheduleIdError, InvalidCenterIdError, InvalidSpecialtyIdError, InvalidMedicIdError, InvalidCountryError, InvalidDateError } from '@domain/errors/DomainErrors';
 
 describe('RegisterAppointment - Error Handling & Validation', () => {
     let registerAppointment: RegisterAppointment;
@@ -55,7 +55,7 @@ describe('RegisterAppointment - Error Handling & Validation', () => {
             mockDateValidator.isValid.mockReturnValue(true);
 
             await expect(registerAppointment.execute(invalidCountryData)).rejects.toThrow(InvalidCountryError);
-            await expect(registerAppointment.execute(invalidCountryData)).rejects.toThrow("El código de país 'US' no está soportado.");
+            await expect(registerAppointment.execute(invalidCountryData)).rejects.toThrow("no está soportado");
         });
 
         it('should throw InvalidCountryError for empty country', async () => {
@@ -84,14 +84,14 @@ describe('RegisterAppointment - Error Handling & Validation', () => {
             mockDateValidator.isValid.mockReturnValue(false);
 
             await expect(registerAppointment.execute(invalidDateData)).rejects.toThrow(InvalidDateError);
-            await expect(registerAppointment.execute(invalidDateData)).rejects.toThrow("La fecha y hora proporcionada ('invalid-date') no tiene un formato válido.");
+            await expect(registerAppointment.execute(invalidDateData)).rejects.toThrow("no tiene un formato válido");
         });
 
         it('should throw error for empty date', async () => {
             const invalidDateData = { ...validAppointmentData, date: '' };
             mockDateValidator.isValid.mockReturnValue(false);
 
-            //await expect(registerAppointment.execute(invalidDateData)).rejects.toThrow('La fecha y hora proporcionada no tiene el formato correcto');
+            await expect(registerAppointment.execute(invalidDateData)).rejects.toThrow(InvalidDateError);
         });
     });
 
@@ -100,21 +100,23 @@ describe('RegisterAppointment - Error Handling & Validation', () => {
             const invalidData = { ...validAppointmentData, insuredId: '' };
             mockDateValidator.isValid.mockReturnValue(true);
 
-            await expect(registerAppointment.execute(invalidData)).rejects.toThrow('Código Asegurado requerido');
+            await expect(registerAppointment.execute(invalidData)).rejects.toThrow(InvalidInsuredIdError);
         });
 
         it('should throw error when insuredId has less than 5 characters', async () => {
             const invalidData = { ...validAppointmentData, insuredId: '1234' };
             mockDateValidator.isValid.mockReturnValue(true);
 
-            await expect(registerAppointment.execute(invalidData)).rejects.toThrow('Código Asegurado debe tener 5 carácteres');
+            await expect(registerAppointment.execute(invalidData)).rejects.toThrow(InvalidInsuredIdError);
+            await expect(registerAppointment.execute(invalidData)).rejects.toThrow("exactamente 5 caracteres");
         });
 
         it('should throw error when insuredId has more than 5 characters', async () => {
             const invalidData = { ...validAppointmentData, insuredId: '123456' };
             mockDateValidator.isValid.mockReturnValue(true);
 
-            await expect(registerAppointment.execute(invalidData)).rejects.toThrow('Código Asegurado debe tener 5 carácteres');
+            await expect(registerAppointment.execute(invalidData)).rejects.toThrow(InvalidInsuredIdError);
+            await expect(registerAppointment.execute(invalidData)).rejects.toThrow("exactamente 5 caracteres");
         });
     });
 
@@ -123,28 +125,28 @@ describe('RegisterAppointment - Error Handling & Validation', () => {
             const invalidData = { ...validAppointmentData, scheduleId: 0 };
             mockDateValidator.isValid.mockReturnValue(true);
 
-            await expect(registerAppointment.execute(invalidData)).rejects.toThrow('ScheduleId es requerido');
+            await expect(registerAppointment.execute(invalidData)).rejects.toThrow(InvalidScheduleIdError);
         });
 
         it('should throw error when centerId is 0', async () => {
             const invalidData = { ...validAppointmentData, centerId: 0 };
             mockDateValidator.isValid.mockReturnValue(true);
 
-            await expect(registerAppointment.execute(invalidData)).rejects.toThrow('Centro es requerido');
+            await expect(registerAppointment.execute(invalidData)).rejects.toThrow(InvalidCenterIdError);
         });
 
         it('should throw error when specialtyId is 0', async () => {
             const invalidData = { ...validAppointmentData, specialtyId: 0 };
             mockDateValidator.isValid.mockReturnValue(true);
 
-            await expect(registerAppointment.execute(invalidData)).rejects.toThrow('SpecialtyId es requerido');
+            await expect(registerAppointment.execute(invalidData)).rejects.toThrow(InvalidSpecialtyIdError);
         });
 
         it('should throw error when medicId is 0', async () => {
             const invalidData = { ...validAppointmentData, medicId: 0 };
             mockDateValidator.isValid.mockReturnValue(true);
 
-            await expect(registerAppointment.execute(invalidData)).rejects.toThrow('MedicId es requerido');
+            await expect(registerAppointment.execute(invalidData)).rejects.toThrow(InvalidMedicIdError);
         });
     });
 
@@ -174,8 +176,8 @@ describe('RegisterAppointment - Error Handling & Validation', () => {
     describe('Multiple validation errors', () => {
         it('should prioritize country validation before other validations', async () => {
             const multipleErrorsData = {
-                insuredId: '',
-                scheduleId: 0,
+                insuredId: '12345',
+                scheduleId: 81818,
                 countryISO: 'INVALID',
                 centerId: 0,
                 specialtyId: 0,
@@ -187,7 +189,7 @@ describe('RegisterAppointment - Error Handling & Validation', () => {
             await expect(registerAppointment.execute(multipleErrorsData)).rejects.toThrow(InvalidCountryError);
         });
 
-        it('should prioritize date validation after country validation', async () => {
+        it('should prioritize InsuredId validation after country validation', async () => {
             const multipleErrorsData = {
                 insuredId: '',
                 scheduleId: 0,
@@ -199,7 +201,22 @@ describe('RegisterAppointment - Error Handling & Validation', () => {
             };
             mockDateValidator.isValid.mockReturnValue(false);
 
-            await expect(registerAppointment.execute(multipleErrorsData)).rejects.toThrow(InvalidDateError);
+            await expect(registerAppointment.execute(multipleErrorsData)).rejects.toThrow(InvalidInsuredIdError);
+        });
+    });
+
+    describe('Successful registration', () => {
+        it('should successfully register an appointment with valid data', async () => {
+            mockDateValidator.isValid.mockReturnValue(true);
+            mockRepository.save.mockResolvedValue({} as any);
+            mockNotificationService.sendAppointmentScheduled.mockResolvedValue();
+
+            const result = await registerAppointment.execute(validAppointmentData);
+
+            expect(result.message).toContain('PE');
+            expect(result.id).toBe('98701');
+            expect(mockRepository.save).toHaveBeenCalled();
+            expect(mockNotificationService.sendAppointmentScheduled).toHaveBeenCalled();
         });
     });
 });

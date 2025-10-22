@@ -53,23 +53,40 @@ Todos los comandos se ejecutan desde el directorio infra/.
    Inicia el proceso asíncrono. La Lambda 02-appointment envuelve tu payload en ```{"action": "register", "data": ...}```.
 
    _URL_: POST URL_Base/appointments
+
+   **Validaciones:**
+   - `insuredId`: String de exactamente 5 caracteres
+   - `scheduleId`: Número entero positivo (> 0)
+   - `countryISO`: Solo "PE" o "CL" (case-insensitive)
+   - `centerId`, `specialtyId`, `medicId`: Números enteros positivos (> 0)
+   - `date`: Formato ISO 8601 válido
+
    Ejemplo de Petición (Cuerpo JSON):
-   ```
+   ```json
    {
     "insuredId": "12354",
-    "scheduleId": "98701",
+    "scheduleId": 98701,
     "countryISO": "PE",
-    "centerId": "101",
-    "specialtyId": "105",
-    "medicId": "201",
+    "centerId": 101,
+    "specialtyId": 105,
+    "medicId": 201,
     "date": "2025-10-25T10:00:00Z"
     }
     ```
    **Respuesta de Éxito (200 OK)**:
-   ```
+   ```json
     {
         "message": "cita para PE recibido y en proceso.",
         "id": "98701"
+    }
+    ```
+
+   **Respuesta de Error (400 Bad Request)**:
+   ```json
+    {
+        "error": "InvalidInsuredIdError",
+        "message": "InsuredId debe tener exactamente 5 caracteres",
+        "errorCode": "INVALID_INSURED_ID"
     }
     ```
 
@@ -77,24 +94,35 @@ Todos los comandos se ejecutan desde el directorio infra/.
     La Lambda 02-appointment envuelve tu ID de URL en ```{"action": "find", "data": "ID_DEL_ASEGURADO"}```.
 
     _URL_: GET URL_Base/appointments/{insuredId}
+
+    **Validaciones:**
+    - `insuredId`: String de exactamente 5 caracteres (en el path)
+
     Ejemplo de Petición (cURL):
-    ```
-    # Reemplaza [URL_BASE] y el ID
-    curl -X GET [URL_BASE]/appointments/00123
+    ```bash
+    # Reemplaza [URL_BASE] y el ID (debe ser 5 caracteres)
+    curl -X GET [URL_BASE]/appointments/12389
     ```
     **Respuesta de Éxito (200 OK)**:
     Devuelve un array con todas las citas encontradas para el insuredId.
-    ```
+    ```json
     [
         {
-            "insuredId": "00123",
-            "scheduleId": 987,
+            "insuredId": "12389",
             "countryId": "PE",
-            "date": "2025-11-20T08:00:00Z",
-            "estado": "pending" 
-        },
-    // ... más citas
+            "scheduleId": 98706,
+            "centerId": 101,
+            "specialtyId": 105,
+            "medicId": 201,
+            "date": "2025-10-22T10:00:00Z",
+            "estado": "pending"
+        }
     ]
+    ```
+
+    **Respuesta con Array Vacío (200 OK)**:
+    ```json
+    []
     ```
 
 ## Especificación Swagger/OpenAPI
@@ -129,11 +157,11 @@ paths:
               $ref: '#/components/schemas/ScheduleAppointmentRequest'
             example:
               insuredId: "12354"
-              scheduleId: "98701"
+              scheduleId: 98701
               countryISO: "PE"
-              centerId: "101"
-              specialtyId: "105"
-              medicId: "201"
+              centerId: 101
+              specialtyId: 105
+              medicId: 201
               date: "2025-10-25T10:00:00Z"
       responses:
         '200':
@@ -169,10 +197,13 @@ paths:
         - name: insuredId
           in: path
           required: true
-          description: Identificador único del asegurado
+          description: Identificador único del asegurado (exactamente 5 caracteres)
           schema:
             type: string
-          example: "00123"
+            minLength: 5
+            maxLength: 5
+            pattern: '^.{5}$'
+          example: "12389"
       responses:
         '200':
           description: Lista de citas encontradas
@@ -183,10 +214,13 @@ paths:
                 items:
                   $ref: '#/components/schemas/Appointment'
               example:
-                - insuredId: "00123"
-                  scheduleId: 987
+                - insuredId: "12389"
                   countryId: "PE"
-                  date: "2025-11-20T08:00:00Z"
+                  scheduleId: 98706
+                  centerId: 101
+                  specialtyId: 105
+                  medicId: 201
+                  date: "2025-10-22T10:00:00Z"
                   estado: "pending"
         '404':
           description: No se encontraron citas para el asegurado
@@ -216,33 +250,42 @@ components:
       properties:
         insuredId:
           type: string
-          description: Identificador único del asegurado
+          description: Identificador único del asegurado (exactamente 5 caracteres)
+          minLength: 5
+          maxLength: 5
+          pattern: '^.{5}$'
           example: "12354"
         scheduleId:
-          type: string
-          description: Identificador de la agenda/horario
-          example: "98701"
+          type: integer
+          description: Identificador de la agenda/horario (número entero positivo)
+          minimum: 1
+          example: 98701
         countryISO:
           type: string
-          description: Código ISO del país (PE, CL, etc.)
-          pattern: '^[A-Z]{2}$'
+          description: Código ISO del país (solo PE o CL aceptados, case-insensitive)
+          enum: [PE, CL, pe, cl]
+          pattern: '^[A-Za-z]{2}$'
           example: "PE"
         centerId:
-          type: string
-          description: Identificador del centro médico
-          example: "101"
+          type: integer
+          description: Identificador del centro médico (número entero positivo)
+          minimum: 1
+          example: 101
         specialtyId:
-          type: string
-          description: Identificador de la especialidad médica
-          example: "105"
+          type: integer
+          description: Identificador de la especialidad médica (número entero positivo)
+          minimum: 1
+          example: 105
         medicId:
-          type: string
-          description: Identificador del médico
-          example: "201"
+          type: integer
+          description: Identificador del médico (número entero positivo)
+          minimum: 1
+          example: 201
         date:
           type: string
           format: date-time
-          description: Fecha y hora de la cita en formato ISO 8601
+          description: Fecha y hora de la cita en formato ISO 8601 (validado estrictamente)
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$'
           example: "2025-10-25T10:00:00Z"
 
     ScheduleAppointmentResponse:
@@ -262,21 +305,40 @@ components:
       properties:
         insuredId:
           type: string
-          description: Identificador del asegurado
-          example: "00123"
+          description: Identificador del asegurado (5 caracteres)
+          minLength: 5
+          maxLength: 5
+          example: "12389"
         scheduleId:
           type: integer
-          description: Identificador de la agenda
-          example: 987
+          description: Identificador de la agenda (número entero positivo)
+          minimum: 1
+          example: 98706
         countryId:
           type: string
-          description: Código del país
+          description: Código del país (PE o CL en mayúsculas)
+          enum: [PE, CL]
           example: "PE"
+        centerId:
+          type: integer
+          description: Identificador del centro médico (número entero positivo)
+          minimum: 1
+          example: 101
+        specialtyId:
+          type: integer
+          description: Identificador de la especialidad médica (número entero positivo)
+          minimum: 1
+          example: 105
+        medicId:
+          type: integer
+          description: Identificador del médico (número entero positivo)
+          minimum: 1
+          example: 201
         date:
           type: string
           format: date-time
-          description: Fecha y hora de la cita
-          example: "2025-11-20T08:00:00Z"
+          description: Fecha y hora de la cita en formato ISO 8601
+          example: "2025-10-22T10:00:00Z"
         estado:
           type: string
           description: Estado actual de la cita
@@ -288,12 +350,39 @@ components:
       properties:
         error:
           type: string
-          description: Tipo o nombre del error
-          example: "ValidationError"
+          description: Tipo o nombre del error de dominio
+          enum:
+            - InvalidInsuredIdError
+            - InvalidScheduleIdError
+            - InvalidCountryError
+            - InvalidDateError
+            - InvalidAppointmentStatusError
+            - InvalidCenterIdError
+            - InvalidSpecialtyIdError
+            - InvalidMedicIdError
+            - RepositoryError
+            - NotificationError
+          example: "InvalidInsuredIdError"
         message:
           type: string
-          description: Descripción detallada del error
-          example: "El campo 'countryISO' es requerido"
+          description: Descripción detallada del error con contexto
+          example: "InsuredId debe tener exactamente 5 caracteres"
+        errorCode:
+          type: string
+          description: Código único del error para debugging y tracking
+          enum:
+            - INVALID_INSURED_ID
+            - INVALID_SCHEDULE_ID
+            - INVALID_COUNTRY
+            - INVALID_DATE
+            - INVALID_APPOINTMENT_STATUS
+            - INVALID_CENTER_ID
+            - INVALID_SPECIALTY_ID
+            - INVALID_MEDIC_ID
+            - REPOSITORY_ERROR
+            - NOTIFICATION_ERROR
+            - UNKNOWN_ERROR
+          example: "INVALID_INSURED_ID"
 ```
 
 ### Uso de la Especificación Swagger

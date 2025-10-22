@@ -1,9 +1,15 @@
-
 import { IDateValidator } from "@domain/dto/IDateValidator";
 import { ILogger } from "@domain/dto/Logger";
-import { Appointment, CountryISO } from "@domain/entities/appointment";
+import { Appointment } from "@domain/entities/appointment";
 import { IAppointmentRepository } from "@domain/repository/IAppointmentRepository";
 import { INotificationService } from "@domain/repository/INotificationService";
+import { InsuredId } from "@domain/valueobjects/InsuredId";
+import { ScheduleId } from "@domain/valueobjects/ScheduleId";
+import { CountryISO } from "@domain/valueobjects/CountryISO";
+import { CenterId } from "@domain/valueobjects/CenterId";
+import { SpecialtyId } from "@domain/valueobjects/SpecialtyId";
+import { MedicId } from "@domain/valueobjects/MedicId";
+import { AppointmentDate } from "@domain/valueobjects/AppointmentDate";
 
 export interface ScheduleAppointmentInput {
     insuredId: string;
@@ -20,22 +26,9 @@ export interface ScheduleAppointmentOutput {
     id: string;
 }
 
-export class InvalidCountryError extends Error {
-    constructor(country: string) {
-        super(`El código de país '${country}' no está soportado.`);
-        this.name = 'InvalidCountryError';
-    }
-}
-
-export class InvalidDateError extends Error {
-    constructor(date: string) {
-        super(`La fecha y hora proporcionada ('${date}') no tiene un formato válido.`);
-        this.name = 'InvalidDateError';
-    }
-}
-
 export class RegisterAppointment {
-    constructor(private appointmentRepository: IAppointmentRepository,
+    constructor(
+        private appointmentRepository: IAppointmentRepository,
         private dateValidator: IDateValidator,
         private logger: ILogger,
         private notificationService: INotificationService
@@ -44,63 +37,34 @@ export class RegisterAppointment {
     async execute(input: ScheduleAppointmentInput): Promise<ScheduleAppointmentOutput> {
         this.logger.info("Iniciando agendamiento de cita.", { insuredId: input.insuredId });
 
-        const validCountries: string[] = ['PE', 'CL'];
-        const country = input.countryISO.toUpperCase();
-
-        if (!validCountries.includes(country)) {
-            throw new InvalidCountryError(input.countryISO);
-        }
-
-        if (!this.dateValidator.isValid(input.date)) {
-            throw new InvalidDateError(input.date);
-        }
-
-        // validaciones
-        if (input.insuredId == "") {
-            throw new Error("Código Asegurado requerido");
-        }
-
-        if (input.insuredId.length < 5 || input.insuredId.length > 5) {
-            throw new Error("Código Asegurado debe tener 5 carácteres");
-        }
-
-
-        if (input.scheduleId == 0) {
-            throw new Error("ScheduleId es requerido");
-        }
-
-        if (input.centerId == 0) {
-            throw new Error("Centro es requerido");
-        }
-
-        if (input.specialtyId == 0) {
-            throw new Error("SpecialtyId es requerido");
-        }
-
-        if (input.medicId == 0) {
-            throw new Error("MedicId es requerido");
-        }
-
-        if (!this.dateValidator.isValid(input.date)) {
-            throw new Error("La fecha no tiene el formato correcto");
-        }
+        const insuredId = new InsuredId(input.insuredId);
+        const scheduleId = new ScheduleId(input.scheduleId);
+        const countryISO = new CountryISO(input.countryISO);
+        const centerId = new CenterId(input.centerId);
+        const specialtyId = new SpecialtyId(input.specialtyId);
+        const medicId = new MedicId(input.medicId);
+        const appointmentDate = new AppointmentDate(input.date, this.dateValidator);
 
         const appointment = new Appointment(
-            input.scheduleId, input.centerId, input.specialtyId,
-            input.medicId, input.date, input.insuredId,
-            country as CountryISO
+            scheduleId,
+            centerId,
+            specialtyId,
+            medicId,
+            appointmentDate,
+            insuredId,
+            countryISO
         );
 
-
-        appointment.assignEstado("pending");
-
+        // Persistir cita
         await this.appointmentRepository.save(appointment);
 
+        // Enviar notificación
         await this.notificationService.sendAppointmentScheduled(appointment);
 
         return {
-            message: `cita para ${country} recibido y en proceso.`,
-            id: appointment.scheduleId.toString()
+            message: `cita para ${countryISO.getValue()} recibido y en proceso.`,
+            id: scheduleId.toString()
         };
     }
 }
+

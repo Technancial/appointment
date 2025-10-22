@@ -1,33 +1,51 @@
 import { IEventPublisher, ProcessedMessage } from '@domain/entities';
 import { ILogger } from '@domain/Logger';
 import { EventBridge } from 'aws-sdk';
+import { ConfigService } from '@infrastructure/config/ConfigService';
 
 export class EventBridgePublisher implements IEventPublisher {
-    private eventBridge = new EventBridge();
+    private eventBridge: EventBridge;
     private eventBusName: string;
 
-    constructor(private logger: ILogger) {
-        this.eventBusName = process.env.EVENT_BUS_NAME || 'default';
+    constructor(private logger: ILogger, config: ConfigService) {
+        this.eventBridge = new EventBridge();
+        this.eventBusName = config.eventBusName;
     }
 
     async publishSuccess(message: ProcessedMessage): Promise<void> {
-        this.logger.info(`publish Event queue: ${message.data.queueName}`);
-
         const detail = JSON.stringify({
-            //queueProcessed: message.data.queueName,
             insuredId: message.data.insuredId,
             scheduleId: message.data.scheduleId,
-            //status: 'SUCCESS'
         });
-        this.logger.info(`publish event detail: ${detail}`);
 
-        await this.eventBridge.putEvents({
-            Entries: [{
-                Source: 'com.appointment.processor', // Debe coincidir con la regla de EventBridge del CDK
-                DetailType: 'S3_SAVE_SUCCESS',
-                Detail: detail,
-                EventBusName: this.eventBusName,
-            }]
-        }).promise();
+        this.logger.info(`Publishing event to EventBridge`, {
+            eventBusName: this.eventBusName,
+            messageId: message.id
+        });
+
+        this.logger.info(`Event detail`, {
+            detail: detail
+        });
+
+        try {
+            await this.eventBridge.putEvents({
+                Entries: [{
+                    Source: 'com.appointment.processor',
+                    DetailType: 'DB_SAVE_SUCCESS',
+                    Detail: detail,
+                    EventBusName: this.eventBusName,
+                }]
+            }).promise();
+
+            this.logger.info(`Event published successfully`, {
+                messageId: message.id
+            });
+        } catch (error) {
+            this.logger.error('Failed to publish event to EventBridge', error as Error, {
+                messageId: message.id,
+                eventBusName: this.eventBusName
+            });
+            throw new Error(`EventBridge publish failed: ${(error as Error).message}`);
+        }
     }
 }

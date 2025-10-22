@@ -4,12 +4,22 @@ import { FindAppointment } from '@application/findAppointment';
 import { ILogger } from '@domain/dto/Logger';
 import { Appointment } from '@domain/entities/appointment';
 import { payloadGenericRequestDTO } from '@infrastructure/controller/dtos';
+import { ScheduleId } from '@domain/valueobjects/ScheduleId';
+import { CenterId } from '@domain/valueobjects/CenterId';
+import { SpecialtyId } from '@domain/valueobjects/SpecialtyId';
+import { MedicId } from '@domain/valueobjects/MedicId';
+import { AppointmentDate } from '@domain/valueobjects/AppointmentDate';
+import { IDateValidator } from '@domain/dto/IDateValidator';
+import { NativeDateValidator } from '@infrastructure/utils/nativeDateValidator';
+import { InsuredId } from '@domain/valueobjects/InsuredId';
+import { CountryISO } from '@domain/valueobjects/CountryISO';
 
 describe('httpController', () => {
     let mockRegisterAppointment: jest.Mocked<RegisterAppointment>;
     let mockFindAppointment: jest.Mocked<FindAppointment>;
     let mockLogger: jest.Mocked<ILogger>;
     let controller: any;
+    const dateValidator: IDateValidator = new NativeDateValidator();
 
     beforeEach(() => {
         mockRegisterAppointment = {
@@ -83,7 +93,8 @@ describe('httpController', () => {
             await expect(controller(event)).rejects.toThrow(
                 JSON.stringify({
                     error: 'Error',
-                    message: 'Código Asegurado requerido'
+                    message: 'Código Asegurado requerido',
+                    errorCode: 'UNKNOWN_ERROR'
                 })
             );
 
@@ -96,13 +107,13 @@ describe('httpController', () => {
             const insuredId = '12345';
             const mockAppointments = [
                 new Appointment(
-                    98701,
-                    101,
-                    105,
-                    201,
-                    '2025-12-25T10:00:00Z',
-                    '12345',
-                    'PE'
+                    new ScheduleId(98701),
+                    new CenterId(101),
+                    new SpecialtyId(105),
+                    new MedicId(201),
+                    new AppointmentDate('2025-12-25T10:00:00Z', dateValidator),
+                    new InsuredId('12345'),
+                    new CountryISO('PE')
                 )
             ];
 
@@ -134,7 +145,8 @@ describe('httpController', () => {
             await expect(controller(event)).rejects.toThrow(
                 JSON.stringify({
                     error: 'Error',
-                    message: 'Falta InsuredId'
+                    message: 'Falta InsuredId',
+                    errorCode: 'UNKNOWN_ERROR'
                 })
             );
 
@@ -156,7 +168,8 @@ describe('httpController', () => {
             await expect(controller(event)).rejects.toThrow(
                 JSON.stringify({
                     error: 'CustomError',
-                    message: 'Custom error message'
+                    message: 'Custom error message',
+                    errorCode: 'UNKNOWN_ERROR'
                 })
             );
         });

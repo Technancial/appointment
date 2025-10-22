@@ -1,9 +1,16 @@
 import { RegisterAppointment, ScheduleAppointmentInput } from "@application/registerAppointment"
 import { IDateValidator } from "@domain/dto/IDateValidator";
 import { ILogger } from "@domain/dto/Logger";
-import { Appointment, CountryISO } from "@domain/entities/appointment";
+import { Appointment } from "@domain/entities/appointment";
 import { IAppointmentRepository } from "@domain/repository/IAppointmentRepository";
 import { INotificationService } from "@domain/repository/INotificationService";
+import { AppointmentDate } from "@domain/valueobjects/AppointmentDate";
+import { CenterId } from "@domain/valueobjects/CenterId";
+import { CountryISO } from "@domain/valueobjects/CountryISO";
+import { InsuredId } from "@domain/valueobjects/InsuredId";
+import { MedicId } from "@domain/valueobjects/MedicId";
+import { ScheduleId } from "@domain/valueobjects/ScheduleId";
+import { SpecialtyId } from "@domain/valueobjects/SpecialtyId";
 import { PinoLoggerAdapter } from "@infrastructure/utils/Logger";
 import { NativeDateValidator } from "@infrastructure/utils/nativeDateValidator";
 
@@ -39,14 +46,22 @@ describe('CreateAppointment', () => {
             date: '2025-12-25T10:00:00Z'
         };
 
+        const insuredId = new InsuredId(appointmentData.insuredId);
+        const scheduleId = new ScheduleId(appointmentData.scheduleId);
+        const countryISO = new CountryISO(appointmentData.countryISO);
+        const centerId = new CenterId(appointmentData.centerId);
+        const specialtyId = new SpecialtyId(appointmentData.specialtyId);
+        const medicId = new MedicId(appointmentData.medicId);
+        const appointmentDate = new AppointmentDate(appointmentData.date, dateValidator);
+
         const appointmentEntity = new Appointment(
-            appointmentData.scheduleId,
-            appointmentData.centerId,
-            appointmentData.specialtyId,
-            appointmentData.medicId,
-            appointmentData.date,
-            appointmentData.insuredId,
-            appointmentData.countryISO as CountryISO,
+            scheduleId,
+            centerId,
+            specialtyId,
+            medicId,
+            appointmentDate,
+            insuredId,
+            countryISO,
         );
 
         mockRepository.save.mockResolvedValue(appointmentEntity);

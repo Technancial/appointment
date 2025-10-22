@@ -4,7 +4,8 @@
   
   "compilerOptions": {
     // Anula rootDir si es necesario, pero si la base es "./", solo necesitamos incluir
-    "rootDir": "./" 
+    //"rootDir": "./" 
+     "types": ["jest", "node", "aws-lambda"]
   },
   
   // 💡 Incluye tanto el código fuente como las pruebas

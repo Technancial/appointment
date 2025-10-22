@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
-    "rootDir": "./src",
+    "rootDir": "./",
     "outDir": "./dist",
     "esModuleInterop": true,
     "strict": true,
@@ -15,5 +15,12 @@
       "@application/*": ["application/*"],
       "@infrastructure/*": ["infrastructure/*"]
     }
-  }
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "tests/**/*" // Excluimos tests de la compilación de producción
+  ]
 }

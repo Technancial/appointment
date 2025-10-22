@@ -22,8 +22,6 @@ export class SNSNotificationRepository implements INotificationService {
             TopicArn: this.topicArn,
             Message: appointmentData,
             MessageAttributes: {
-                // 💡 CLAVE DEL FILTRADO: Usamos un atributo de mensaje
-                // Las suscripciones a este tópico usarán este campo para filtrar.
                 Country: {
                     DataType: 'String',
                     StringValue: country
