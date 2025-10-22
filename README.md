@@ -51,7 +51,7 @@ Todos los comandos se ejecutan desde el directorio infra/.
    _POST_: Agendar una Cita (action: "register")
    Inicia el proceso asíncrono. La Lambda 02-appointment envuelve tu payload en ```{"action": "register", "data": ...}```.
 
-   _URL_: POST /appointments
+   _URL_: POST URL_Base/appointments
    Ejemplo de Petición (Cuerpo JSON):
    ```
    {
@@ -75,7 +75,7 @@ Todos los comandos se ejecutan desde el directorio infra/.
     _GET_: Consultar Citas por Asegurado (action: "find")
     La Lambda 02-appointment envuelve tu ID de URL en ```{"action": "find", "data": "ID_DEL_ASEGURADO"}```.
 
-    _URL_: GET /appointments/{insuredId}
+    _URL_: GET URL_Base/appointments/{insuredId}
     Ejemplo de Petición (cURL):
     ```
     # Reemplaza [URL_BASE] y el ID
